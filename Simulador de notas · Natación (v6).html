@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de notas · Natación</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f7f9fb; --surface:#ffffff; --ink:#16212b; --muted:#64727f; --line:#e3e9ee;
+  --accent:#0b7a9e; --accent-soft:#e3f2f7; --ok:#1d7a4d; --ok-soft:#e5f4ec; --bad:#b4472f; --bad-soft:#fbece8;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f161c; --surface:#161f27; --ink:#e8eef3; --muted:#93a1ad; --line:#26323c;
+    --accent:#4cc3e6; --accent-soft:#12303b; --ok:#5fcf97; --ok-soft:#14301f; --bad:#f09580; --bad-soft:#3a1d17;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#161f27; --ink:#e8eef3; --muted:#93a1ad; --line:#26323c;
+  --accent:#4cc3e6; --accent-soft:#12303b; --ok:#5fcf97; --ok-soft:#14301f; --bad:#f09580; --bad-soft:#3a1d17;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.5}
+main{max-width:920px;margin:0 auto;padding:40px 20px 56px}
+h1{font-size:1.6rem;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 32px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.panel h2{font-size:1rem;font-weight:600;margin:0 0 18px}
+.row{padding:14px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0;padding-top:0}
+.row:last-child{padding-bottom:0}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.name{font-weight:500}
+.weight{color:var(--muted);font-size:.875rem;margin-left:6px;font-weight:400}
+.ctl{display:flex;align-items:center;gap:14px}
+input[type=range]{flex:1;min-width:0;accent-color:var(--accent);height:28px;margin:0}
+input[type=number]{width:72px;font:inherit;font-variant-numeric:tabular-nums;text-align:center;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 6px}
+input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{font-size:.8rem;color:var(--muted)}
+.big{display:flex;gap:28px;flex-wrap:wrap;margin-bottom:6px}
+.stat .v{font-size:2.4rem;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{color:var(--muted);font-size:.875rem}
+.goal{padding:16px 0;border-top:1px solid var(--line)}
+.goal:first-of-type{border-top:0}
+.goal .top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.goal .t{font-weight:500}
+.goal .n{font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums}
+.goal .msg{font-size:.875rem;color:var(--muted);margin-top:2px}
+.lane{position:relative;height:8px;background:var(--accent-soft);border-radius:99px;margin:12px 0 4px;overflow:hidden}
+.lane i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:99px;transition:width .25s ease}
+.lane.bad i{background:var(--bad)}
+.lane.ok i{background:var(--ok)}
+.scale{display:flex;justify-content:space-between;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.status{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.8rem;font-weight:500;background:var(--accent-soft);color:var(--accent)}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.status.bad{background:var(--bad-soft);color:var(--bad)}
+.final{margin-top:20px}
+.final .head{margin-bottom:0}
+button{font:inherit;color:var(--muted);background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{color:var(--ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:20px;color:var(--muted);font-size:.8rem;gap:12px}
+[hidden]{display:none!important}
+.txt{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-top:8px}
+.who{margin:-8px 0 16px;font-weight:500}
+.exp{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+button.primary{color:var(--surface);background:var(--accent);border-color:var(--accent);font-weight:500;padding:8px 16px}
+button.primary:hover{color:var(--surface);opacity:.9}
+button:disabled{opacity:.4;cursor:not-allowed}
+@media print{button{display:none}body{background:#fff}}
+.light{display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-top:22px}
+.lamps{display:flex;flex-direction:column;gap:5px;background:var(--bg);padding:7px;border-radius:99px;border:1px solid var(--line)}
+.lamps b{width:14px;height:14px;border-radius:50%;opacity:.18;transition:opacity .2s ease}
+.lamps b:nth-child(1){background:#2e9e66}
+.lamps b:nth-child(2){background:#e0a526}
+.lamps b:nth-child(3){background:#d0503a}
+.lamps b{cursor:pointer}
+.lamps b:hover{opacity:.55}
+.lamps b:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lamps b.on{opacity:1}
+.lt{font-weight:600}
+.ls{font-size:.875rem;color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:var(--line)}
+.dot.g{background:#2e9e66}
+.dot.y{background:#e0a526}
+.dot.r{background:#d0503a}
+.wgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:end}
+@media (max-width:520px){.wgrid{grid-template-columns:repeat(2,1fr)}}
+.wgrid label,.total{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.wgrid input{width:100%}
+.total b{font-size:1rem;color:var(--ink);padding:7px 0;font-variant-numeric:tabular-nums}
+.total.bad b{color:var(--bad)}
+.warn{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:10px 12px;font-size:.875rem;margin-top:12px}
+@media (prefers-reduced-motion:reduce){.lane i,.lamps b{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Simulador de notas · Natación</h1>
+  <p class="sub">Mueve tus notas y mira qué necesitas en el proyecto final. Escala de 0,0 a 5,0; se aprueba con 3,0.</p>
+
+  <div class="grid">
+    <section class="panel" aria-label="Tus notas">
+      <h2>Tus notas</h2>
+
+      <div class="row">
+        <label class="name" for="nm">Estudiante</label>
+        <input type="text" id="nm" class="txt" placeholder="Nombre del estudiante" maxlength="60" autocomplete="name">
+      </div>
+
+      <div class="row">
+        <div class="head"><span class="name">Corte 1<span class="weight" id="l1">30 %</span></span></div>
+        <div class="ctl">
+          <input type="range" id="r1" min="0" max="5" step="0.1" value="3.5" aria-label="Corte 1">
+          <input type="number" id="n1" min="0" max="5" step="0.1" value="3.5" inputmode="decimal" aria-label="Nota del corte 1">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="head"><span class="name">Corte 2<span class="weight" id="l2">30 %</span></span></div>
+        <div class="ctl">
+          <input type="range" id="r2" min="0" max="5" step="0.1" value="3.5" aria-label="Corte 2">
+          <input type="number" id="n2" min="0" max="5" step="0.1" value="3.5" inputmode="decimal" aria-label="Nota del corte 2">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="head"><span class="name">Proyecto final<span class="weight" id="l3">40 %</span></span><span class="tag">simulación</span></div>
+        <div class="ctl">
+          <input type="range" id="r3" min="0" max="5" step="0.1" value="3.5" aria-label="Proyecto final">
+          <input type="number" id="n3" min="0" max="5" step="0.1" value="3.5" inputmode="decimal" aria-label="Nota del proyecto final">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="head"><span class="name">Porcentajes</span><span class="tag">editables por el docente</span></div>
+        <div class="wgrid">
+          <label>Corte 1<input type="number" id="w1" min="0" max="100" step="1" value="30" inputmode="decimal"></label>
+          <label>Corte 2<input type="number" id="w2" min="0" max="100" step="1" value="30" inputmode="decimal"></label>
+          <label>Proyecto final<input type="number" id="w3" min="0" max="100" step="1" value="40" inputmode="decimal"></label>
+          <div class="total" id="totbox"><span>Suma</span><b id="tot">100 %</b></div>
+        </div>
+        <div class="warn" id="warn" hidden></div>
+      </div>
+
+      <div class="foot">
+        <span>Las notas se ajustan de 0 a 5.</span>
+        <button type="button" id="reset">Reiniciar simulador</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Resultados" aria-live="polite">
+      <h2>Tu avance</h2>
+      <div class="who" id="who" hidden></div>
+      <div class="big">
+        <div class="stat"><div class="v" id="acc">0,00</div><div class="l">Puntos acumulados (máx. <span id="accmax">3,00</span>)</div></div>
+        <div class="stat"><div class="v" id="avg">0,0</div><div class="l">Promedio de los dos cortes</div></div>
+      </div>
+
+      <div class="light" id="light" role="status">
+        <div class="lamps"><b id="lg" role="button" tabindex="0" aria-label="Simular nota final excelente" title="Excelente: 3,8 a 5,0"></b><b id="ly" role="button" tabindex="0" aria-label="Simular nota final buena" title="Buena: 2,95 a 3,79"></b><b id="lr" role="button" tabindex="0" aria-label="Simular nota final mala" title="Mala: 0 a 2,94"></b></div>
+        <div><div class="lt" id="lt">–</div><div class="ls" id="ls"></div><div class="ls" id="lhint">Toca una luz para simular la nota del proyecto que lleva a ese nivel.</div></div>
+      </div>
+
+      <h2 style="margin-top:26px;margin-bottom:4px">Lo que necesitas en el proyecto</h2>
+      <div class="goal">
+        <div class="top"><span class="t"><span class="dot" id="d3"></span>Para aprobar (3,0)</span><span class="n" id="need3">–</span></div>
+        <div class="lane" id="lane3"><i id="bar3" style="width:0"></i></div>
+        <div class="scale"><span>0</span><span>5</span></div>
+        <div class="msg" id="msg3"></div>
+      </div>
+      <div class="goal">
+        <div class="top"><span class="t"><span class="dot" id="d45"></span>Para excelencia (4,5)</span><span class="n" id="need45">–</span></div>
+        <div class="lane" id="lane45"><i id="bar45" style="width:0"></i></div>
+        <div class="scale"><span>0</span><span>5</span></div>
+        <div class="msg" id="msg45"></div>
+      </div>
+
+      <div class="final">
+        <div class="head">
+          <div><div class="l tag">Nota final con el proyecto simulado</div><div class="stat"><div class="v" id="fin">0,00</div></div></div>
+          <span class="status" id="st">–</span>
+        </div>
+      </div>
+
+      <div class="exp">
+        <span class="tag" id="pdfmsg">Exporta este resultado en un PDF.</span>
+        <button type="button" class="primary" id="pdf">Exportar a PDF</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  var P = [30, 30, 40], W = [0.3, 0.3, 0.4], DEF = 3.5;
+  var el = function(id){ return document.getElementById(id); };
+  var r = [el('r1'), el('r2'), el('r3')], n = [el('n1'), el('n2'), el('n3')], w = [el('w1'), el('w2'), el('w3')];
+  var fmt = function(x, d){ return x.toFixed(d).replace('.', ','); };
+  var pct = function(x){ return String(x).replace('.', ',') + ' %'; };
+  var clamp = function(x){ return isNaN(x) ? 0 : Math.min(5, Math.max(0, x)); };
+  var val = function(i){ return clamp(parseFloat(n[i].value)); };
+
+  var VALID = false, LASTK = 'g';
+  function band(f){ f = Math.round(f * 100) / 100; return f >= 3.8 ? 'g' : f >= 2.95 ? 'y' : 'r'; }
+
+  async function exportPDF(){
+    if (!VALID) return;
+    el('pdfmsg').textContent = '';
+    var J = window.jspdf;
+    if (!J){ window.print(); return; }
+    var d = new J.jsPDF({unit:'mm', format:'a4'});
+    var m = 20, R = 190, y = 26;
+    var INK = [22,33,43], MUT = [100,114,127], LN = [227,233,238], AC = [11,122,158], SOFT = [227,242,247];
+    var COL = {g:[46,158,102], y:[224,165,38], r:[208,80,58]};
+    function tx(s, x, yy, size, bold, col, al){
+      d.setFont('helvetica', bold ? 'bold' : 'normal'); d.setFontSize(size);
+      d.setTextColor(col[0], col[1], col[2]);
+      d.text(String(s), x, yy, al ? {align: al} : undefined);
+    }
+    function hr(yy){ d.setDrawColor(LN[0], LN[1], LN[2]); d.setLineWidth(0.3); d.line(m, yy, R, yy); }
+    var nm = el('nm').value.trim();
+
+    tx('Simulador de notas · Natación', m, y, 18, true, INK);
+    tx(new Date().toLocaleDateString('es-CO'), R, y, 10, false, MUT, 'right');
+    y += 12;
+    tx('Estudiante', m, y, 9, false, MUT);
+    tx(nm || 'Sin nombre', m, y + 6.5, 13, true, INK);
+    y += 16; hr(y); y += 9;
+
+    tx('Componente', m, y, 9, false, MUT);
+    tx('Peso', 105, y, 9, false, MUT, 'right');
+    tx('Nota', 140, y, 9, false, MUT, 'right');
+    tx('Aporte', R, y, 9, false, MUT, 'right');
+    y += 3; hr(y); y += 7;
+    var names = ['Corte 1', 'Corte 2', 'Proyecto final'], vals = [val(0), val(1), val(2)];
+    for (var i = 0; i < 3; i++){
+      tx(names[i], m, y, 11, false, INK);
+      tx(pct(P[i]), 105, y, 11, false, INK, 'right');
+      tx(fmt(vals[i], 1), 140, y, 11, false, INK, 'right');
+      tx(fmt(vals[i] * W[i], 2), R, y, 11, false, INK, 'right');
+      y += 8;
+    }
+    hr(y - 3); y += 5;
+    tx('Nota final (con el proyecto simulado)', m, y, 11, true, INK);
+    tx(el('fin').textContent, 140, y, 13, true, INK, 'right');
+    var sc = el('st').className.indexOf('bad') > -1 ? COL.r : COL.g;
+    tx(el('st').textContent, R, y, 11, true, sc, 'right');
+    y += 16;
+
+    tx('Puntos acumulados (máx. ' + el('accmax').textContent + ')', m, y, 10, false, MUT);
+    tx('Promedio de los dos cortes', 110, y, 10, false, MUT);
+    y += 9;
+    tx(el('acc').textContent, m, y, 20, true, INK);
+    tx(el('avg').textContent, 110, y, 20, true, INK);
+    y += 8; hr(y); y += 11;
+
+    var c = COL[LASTK];
+    d.setFillColor(c[0], c[1], c[2]); d.circle(m + 3, y - 1.5, 3, 'F');
+    tx(el('lt').textContent, m + 11, y, 12, true, INK);
+    tx(el('ls').textContent, m + 11, y + 6, 10, false, MUT);
+    y += 18; hr(y); y += 10;
+
+    tx('Lo que necesitas en el proyecto final', m, y, 12, true, INK); y += 11;
+    [['Para aprobar (3,0)', 'need3', 'msg3', 'lane3', 'bar3'], ['Para excelencia (4,5)', 'need45', 'msg45', 'lane45', 'bar45']].forEach(function(g){
+      tx(g[0], m, y, 11, false, INK);
+      tx(el(g[1]).textContent, R, y, 16, true, INK, 'right');
+      y += 5;
+      d.setFillColor(SOFT[0], SOFT[1], SOFT[2]); d.roundedRect(m, y, R - m, 2.6, 1.3, 1.3, 'F');
+      var f = (parseFloat(el(g[4]).style.width) || 0) / 100;
+      var lc = el(g[3]).className;
+      var fc = lc.indexOf('bad') > -1 ? COL.r : lc.indexOf('ok') > -1 ? COL.g : AC;
+      if (f > 0){ d.setFillColor(fc[0], fc[1], fc[2]); d.roundedRect(m, y, (R - m) * f, 2.6, 1.3, 1.3, 'F'); }
+      y += 8;
+      tx(el(g[2]).textContent, m, y, 10, false, MUT);
+      y += 14;
+    });
+    tx('Escala de 0,0 a 5,0 · Se aprueba con 3,0', m, 285, 8, false, MUT);
+
+    var buf = d.output('arraybuffer');
+    var slug = nm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    var fname = 'notas-natacion' + (slug ? '-' + slug : '') + '.pdf';
+    var dl = null;
+    try { dl = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (!dl){ window.print(); return; }
+    try {
+      await dl.save({filename: fname, data: buf});
+      el('pdfmsg').textContent = 'PDF listo.';
+    } catch (e) {
+      if (!e || e.code !== 'declined') el('pdfmsg').textContent = 'No se pudo guardar el PDF. Inténtalo de nuevo.';
+    }
+  }
+
+  var TXT = {g:'Nota final excelente', y:'Nota final buena', r:'Nota final mala'};
+  var RNG = {g:'rango de 3,8 a 5,0', y:'rango de 2,95 a 3,79', r:'rango de 0 a 2,94'};
+  function lamps(k){
+    el('lg').className = k === 'g' ? 'on' : '';
+    el('ly').className = k === 'y' ? 'on' : '';
+    el('lr').className = k === 'r' ? 'on' : '';
+  }
+  function semaforo(fin){
+    var k = band(fin);
+    LASTK = k;
+    lamps(k);
+    el('lt').textContent = TXT[k];
+    el('ls').textContent = 'Nota final ' + fmt(Math.round(fin * 100) / 100, 2) + ' · ' + RNG[k];
+  }
+  function blank(){
+    ['need3','need45','fin'].forEach(function(id){ el(id).textContent = '–'; });
+    ['bar3','bar45'].forEach(function(id){ el(id).style.width = '0%'; });
+    ['lane3','lane45'].forEach(function(id){ el(id).className = 'lane'; });
+    ['msg3','msg45'].forEach(function(id){ el(id).textContent = ''; });
+    ['d3','d45'].forEach(function(id){ el(id).className = 'dot'; });
+    lamps('');
+    el('lt').textContent = 'Ajusta los porcentajes';
+    el('ls').textContent = 'Los cálculos se reanudan cuando suman 100 %.';
+    el('st').textContent = '–'; el('st').className = 'status';
+  }
+
+  function goal(target, acc, ids){
+    var need = (target - acc) / W[2];
+    el(ids.d).className = 'dot ' + (need > 5 ? '' : band(target));
+    var out = el(ids.n), msg = el(ids.m), lane = el(ids.l), bar = el(ids.b);
+    lane.className = 'lane';
+    if (need <= 0){
+      out.textContent = '0,0'; bar.style.width = '0%'; lane.className = 'lane ok';
+      msg.textContent = target === 3 ? 'Ya apruebas con tus dos cortes, sin importar el proyecto.' : 'Ya alcanzas la excelencia con tus dos cortes.';
+    } else if (need > 5){
+      out.textContent = fmt(need, 2); bar.style.width = '100%'; lane.className = 'lane bad';
+      msg.textContent = 'No es alcanzable: necesitarías más de 5,0 en el proyecto.';
+    } else {
+      out.textContent = fmt(need, 2); bar.style.width = (need / 5 * 100) + '%';
+      msg.textContent = 'Saca ' + fmt(need, 2) + ' o más en el proyecto final.';
+    }
+  }
+
+  function update(){
+    var sum = 0, i;
+    for (i = 0; i < 3; i++){ P[i] = Math.min(100, Math.max(0, parseFloat(w[i].value) || 0)); W[i] = P[i] / 100; sum += P[i]; }
+    sum = Math.round(sum * 100) / 100;
+    for (i = 0; i < 3; i++) el('l' + (i + 1)).textContent = pct(P[i]);
+    el('tot').textContent = pct(sum);
+    var valid = sum === 100 && P[2] > 0;
+    el('totbox').className = 'total' + (valid ? '' : ' bad');
+    el('warn').hidden = valid;
+    VALID = valid; el('pdf').disabled = !valid;
+    if (!valid) el('warn').textContent = 'Los porcentajes deben sumar 100 % (ahora suman ' + pct(sum) + ') y el proyecto debe valer más de 0 %.';
+    el('accmax').textContent = fmt((W[0] + W[1]) * 5, 2);
+    var a = val(0), b = val(1), p = val(2);
+    var acc = a * W[0] + b * W[1];
+    el('acc').textContent = fmt(acc, 2);
+    if (!valid){ el('avg').textContent = fmt((a + b) / 2, 1); blank(); return; }
+    semaforo(acc + p * W[2]);
+    el('avg').textContent = fmt((a + b) / 2, 1);
+    goal(3.0, acc, {n:'need3', m:'msg3', l:'lane3', b:'bar3', d:'d3'});
+    goal(4.5, acc, {n:'need45', m:'msg45', l:'lane45', b:'bar45', d:'d45'});
+    var fin = acc + p * W[2];
+    el('fin').textContent = fmt(fin, 2);
+    var st = el('st');
+    if (fin >= 4.5){ st.textContent = 'Excelencia'; st.className = 'status ok'; }
+    else if (fin >= 3.0){ st.textContent = 'Aprobado'; st.className = 'status ok'; }
+    else { st.textContent = 'No aprobado'; st.className = 'status bad'; }
+  }
+
+  for (var i = 0; i < 3; i++){
+    (function(i){
+      r[i].addEventListener('input', function(){ n[i].value = r[i].value; update(); });
+      n[i].addEventListener('input', function(){ r[i].value = val(i); update(); });
+      n[i].addEventListener('blur', function(){ n[i].value = val(i); r[i].value = val(i); update(); });
+    })(i);
+  }
+  var DEFP = [30, 30, 40];
+  for (var j = 0; j < 3; j++){
+    w[j].addEventListener('input', update);
+    w[j].addEventListener('blur', function(){ update(); });
+  }
+  el('reset').addEventListener('click', function(){
+    for (var i = 0; i < 3; i++){ r[i].value = DEF; n[i].value = DEF; w[i].value = DEFP[i]; }
+    el('nm').value = ''; el('who').hidden = true; el('who').textContent = '';
+    el('pdfmsg').textContent = 'Exporta este resultado en un PDF.';
+    update();
+  });
+  el('nm').addEventListener('input', function(){
+    var v = this.value.trim();
+    el('who').textContent = v; el('who').hidden = !v;
+  });
+  el('pdf').addEventListener('click', exportPDF);
+
+  function jump(k){
+    if (!VALID) return;
+    var acc = val(0) * W[0] + val(1) * W[1], p = 0;
+    while (p <= 5 && band(acc + p * W[2]) !== k) p = Math.round((p + 0.1) * 10) / 10;
+    if (p > 5){ el('lhint').textContent = 'Con estos cortes no es posible quedar en este nivel.'; return; }
+    n[2].value = p; r[2].value = p; update();
+    el('lhint').textContent = 'Proyecto simulado en ' + fmt(p, 1) + ', la menor nota que da este nivel.';
+  }
+  [['lg', 'g'], ['ly', 'y'], ['lr', 'r']].forEach(function(x){
+    var b = el(x[0]);
+    b.addEventListener('click', function(){ jump(x[1]); });
+    b.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); jump(x[1]); } });
+  });
+  update();
+})();
+</script>
+</body>
+</html>
